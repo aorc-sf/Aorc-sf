@@ -10,36 +10,35 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Publish and verify public site
+      - name: Verify live site and petition API access
         shell: bash
         run: |
           set -euo pipefail
-          API="https://ship.page/deploy"
-          CODE=$(curl -sSL --max-time 60 -X POST \
-            -H 'Content-Type: text/html' \
-            --data-binary @index.html \
-            -o /tmp/response.json -w '%{http_code}' "$API")
-          echo "PUBLISH_HTTP=$CODE"
-          cat /tmp/response.json
-          echo
-          test "$CODE" = "200" -o "$CODE" = "201"
-          URL=$(jq -r '.url // empty' /tmp/response.json)
-          test -n "$URL"
-          echo "Candidate URL: $URL"
+          URL="https://alert-powder-a22bu.shipped.page/"
+          ORIGIN="https://alert-powder-a22bu.shipped.page"
+          API="https://ieihdpufnjthooambooh.supabase.co/functions/v1/sign-petition"
+
           curl -fsSL --max-time 60 -D /tmp/headers "$URL" -o /tmp/hosted.html
           cat /tmp/headers
           grep -qi '^content-type: text/html' /tmp/headers
           grep -q 'American Ownership & Reparative Resource Center' /tmp/hosted.html
           grep -q 'Sign Petition' /tmp/hosted.html
-          grep -q 'https://ieihdpufnjthooambooh.supabase.co/functions/v1/sign-petition' /tmp/hosted.html
-          CSP=$(grep -i '^content-security-policy:' /tmp/headers || true)
-          echo "CSP=$CSP"
-          if [ -n "$CSP" ]; then
-            echo "$CSP" | grep -Eqi "connect-src[^;]*(https:|\*)|default-src[^;]*(https:|\*)" || { echo 'CSP blocks external petition API'; exit 1; }
-          fi
+          grep -q "$API" /tmp/hosted.html
+
           SRC=$(sha256sum index.html | awk '{print $1}')
           DST=$(sha256sum /tmp/hosted.html | awk '{print $1}')
           echo "SOURCE_SHA=$SRC"
           echo "HOSTED_SHA=$DST"
-          [ "$SRC" = "$DST" ] && echo "EXACT_CONTENT_MATCH" || echo "CONTENT_MATCH_MARKERS_ONLY"
+          test "$SRC" = "$DST"
+          echo "EXACT_CONTENT_MATCH"
+
+          curl -sS -X OPTIONS -D /tmp/cors_headers -o /tmp/cors_body \
+            -H "Origin: $ORIGIN" \
+            -H 'Access-Control-Request-Method: POST' \
+            -H 'Access-Control-Request-Headers: content-type' \
+            "$API"
+          cat /tmp/cors_headers
+          grep -qi '^access-control-allow-origin: \*' /tmp/cors_headers
+          grep -qi '^access-control-allow-methods:.*POST' /tmp/cors_headers
+          echo "PETITION_API_CORS_OK"
           echo "PUBLIC_SITE_URL=$URL"
