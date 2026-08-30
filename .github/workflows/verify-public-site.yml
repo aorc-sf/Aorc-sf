@@ -9,9 +9,15 @@ jobs:
   verify:
     runs-on: ubuntu-latest
     steps:
-      - name: Verify public site response
+      - name: Publish site to Supabase Storage
         run: |
-          URL="https://cdn.jsdelivr.net/gh/aorc-sf/Aorc-sf@main/index.html"
+          PUBLISH="https://ieihdpufnjthooambooh.supabase.co/functions/v1/publish-aorc-site"
+          curl -fsSL -X POST "$PUBLISH" -o /tmp/publish.json
+          cat /tmp/publish.json
+          grep -q '"ok":true' /tmp/publish.json
+      - name: Verify public storage site
+        run: |
+          URL="https://ieihdpufnjthooambooh.supabase.co/storage/v1/object/public/aorc-public-site/index.html"
           curl -fsSL -D /tmp/headers "$URL" -o /tmp/site.html
           cat /tmp/headers
           grep -qi '^content-type: text/html' /tmp/headers
