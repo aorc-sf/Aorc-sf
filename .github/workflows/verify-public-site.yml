@@ -14,16 +14,16 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          API="https://api.display.dev/v1/public/artifacts"
+          API="https://ship.page/deploy"
           CODE=$(curl -sSL --max-time 60 -X POST \
-            -F "file=@index.html;type=text/html" \
-            -F "name=American Ownership and Reparative Resource Center" \
+            -H 'Content-Type: text/html' \
+            --data-binary @index.html \
             -o /tmp/response.json -w '%{http_code}' "$API")
           echo "PUBLISH_HTTP=$CODE"
           cat /tmp/response.json
           echo
           test "$CODE" = "200" -o "$CODE" = "201"
-          URL=$(jq -r '.previewUrl // .url // empty' /tmp/response.json)
+          URL=$(jq -r '.url // empty' /tmp/response.json)
           test -n "$URL"
           echo "Candidate URL: $URL"
           curl -fsSL --max-time 60 -D /tmp/headers "$URL" -o /tmp/hosted.html
@@ -32,11 +32,10 @@ jobs:
           grep -q 'American Ownership & Reparative Resource Center' /tmp/hosted.html
           grep -q 'Sign Petition' /tmp/hosted.html
           grep -q 'https://ieihdpufnjthooambooh.supabase.co/functions/v1/sign-petition' /tmp/hosted.html
-          if grep -qi '^content-security-policy:' /tmp/headers; then
-            echo "CSP_PRESENT"
-            grep -i '^content-security-policy:' /tmp/headers
-          else
-            echo "NO_CSP_HEADER"
+          CSP=$(grep -i '^content-security-policy:' /tmp/headers || true)
+          echo "CSP=$CSP"
+          if [ -n "$CSP" ]; then
+            echo "$CSP" | grep -Eqi "connect-src[^;]*(https:|\*)|default-src[^;]*(https:|\*)" || { echo 'CSP blocks external petition API'; exit 1; }
           fi
           SRC=$(sha256sum index.html | awk '{print $1}')
           DST=$(sha256sum /tmp/hosted.html | awk '{print $1}')
@@ -44,4 +43,3 @@ jobs:
           echo "HOSTED_SHA=$DST"
           [ "$SRC" = "$DST" ] && echo "EXACT_CONTENT_MATCH" || echo "CONTENT_MATCH_MARKERS_ONLY"
           echo "PUBLIC_SITE_URL=$URL"
-          echo "$URL" > /tmp/public_site_url.txt
