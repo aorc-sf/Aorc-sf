@@ -1,0 +1,20 @@
+name: Verify public AORC site
+
+on:
+  push:
+    branches: ["main"]
+  workflow_dispatch:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verify public site response
+        run: |
+          URL="https://ieihdpufnjthooambooh.supabase.co/functions/v1/aorc-public"
+          curl -fsSL -D /tmp/headers "$URL" -o /tmp/site.html
+          cat /tmp/headers
+          grep -qi '^content-type: text/html' /tmp/headers
+          grep -q 'American Ownership & Reparative Resource Center' /tmp/site.html
+          grep -q 'Sign Petition' /tmp/site.html
+          echo "PUBLIC_SITE_OK"
