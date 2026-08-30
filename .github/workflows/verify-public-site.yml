@@ -9,20 +9,35 @@ jobs:
   verify:
     runs-on: ubuntu-latest
     steps:
-      - name: Publish site to Supabase Storage
+      - uses: actions/checkout@v4
+      - name: Publish to PageDrop and verify
+        shell: bash
         run: |
-          PUBLISH="https://ieihdpufnjthooambooh.supabase.co/functions/v1/publish-aorc-site"
-          CODE=$(curl -sSL -X POST -o /tmp/publish.txt -w '%{http_code}' "$PUBLISH")
-          echo "HTTP $CODE"
-          cat /tmp/publish.txt
-          test "$CODE" = "200"
-          grep -q '"ok":true' /tmp/publish.txt
-      - name: Verify public storage site
-        run: |
-          URL="https://ieihdpufnjthooambooh.supabase.co/storage/v1/object/public/aorc-public-site/index.html"
-          curl -fsSL -D /tmp/headers "$URL" -o /tmp/site.html
-          cat /tmp/headers
-          grep -qi '^content-type: text/html' /tmp/headers
-          grep -q 'American Ownership & Reparative Resource Center' /tmp/site.html
-          grep -q 'Sign Petition' /tmp/site.html
-          echo "PUBLIC_SITE_OK"
+          set -u
+          jq -Rs '{html:.}' index.html > /tmp/payload.json
+          SUCCESS=0
+          for API in "https://pagedrop.dev/api/v1/sites" "https://www.pagedrop.dev/api/v1/sites"; do
+            echo "Trying $API"
+            CODE=$(curl -sSL --connect-timeout 15 --max-time 45 -X POST -H 'Content-Type: application/json' --data-binary @/tmp/payload.json -o /tmp/response.json -w '%{http_code}' "$API" || true)
+            echo "HTTP $CODE"
+            cat /tmp/response.json 2>/dev/null || true
+            echo
+            URL=$(jq -r '.url // .site_url // .site.url // .data.url // empty' /tmp/response.json 2>/dev/null || true)
+            if [ -n "$URL" ] && [[ "$URL" == https://* ]]; then
+              echo "Candidate URL: $URL"
+              curl -fsSL --max-time 45 -D /tmp/headers "$URL" -o /tmp/hosted.html || continue
+              cat /tmp/headers
+              grep -qi '^content-type: text/html' /tmp/headers || continue
+              grep -q 'American Ownership & Reparative Resource Center' /tmp/hosted.html || continue
+              grep -q 'Sign Petition' /tmp/hosted.html || continue
+              SRC=$(sha256sum index.html | awk '{print $1}')
+              DST=$(sha256sum /tmp/hosted.html | awk '{print $1}')
+              echo "SOURCE_SHA=$SRC"
+              echo "HOSTED_SHA=$DST"
+              if [ "$SRC" = "$DST" ]; then echo "EXACT_CONTENT_MATCH"; else echo "CONTENT_MATCH_MARKERS_ONLY"; fi
+              echo "PUBLIC_SITE_URL=$URL"
+              SUCCESS=1
+              break
+            fi
+          done
+          test "$SUCCESS" = "1"
