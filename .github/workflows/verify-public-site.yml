@@ -11,7 +11,7 @@ jobs:
     steps:
       - name: Verify public site response
         run: |
-          URL="https://ieihdpufnjthooambooh.supabase.co/functions/v1/aorc-public"
+          URL="https://cdn.jsdelivr.net/gh/aorc-sf/Aorc-sf@main/index.html"
           curl -fsSL -D /tmp/headers "$URL" -o /tmp/site.html
           cat /tmp/headers
           grep -qi '^content-type: text/html' /tmp/headers
