@@ -12,9 +12,11 @@ jobs:
       - name: Publish site to Supabase Storage
         run: |
           PUBLISH="https://ieihdpufnjthooambooh.supabase.co/functions/v1/publish-aorc-site"
-          curl -fsSL -X POST "$PUBLISH" -o /tmp/publish.json
-          cat /tmp/publish.json
-          grep -q '"ok":true' /tmp/publish.json
+          CODE=$(curl -sSL -X POST -o /tmp/publish.txt -w '%{http_code}' "$PUBLISH")
+          echo "HTTP $CODE"
+          cat /tmp/publish.txt
+          test "$CODE" = "200"
+          grep -q '"ok":true' /tmp/publish.txt
       - name: Verify public storage site
         run: |
           URL="https://ieihdpufnjthooambooh.supabase.co/storage/v1/object/public/aorc-public-site/index.html"
