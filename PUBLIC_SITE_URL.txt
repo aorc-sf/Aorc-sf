@@ -1,0 +1,11 @@
+AORC public site
+https://alert-powder-a22bu.shipped.page/
+
+Verified 2026-08-30:
+- HTTP 200
+- content-type: text/html
+- exact SHA-256 content match with index.html
+- petition API CORS preflight passed
+
+Temporary anonymous host expiration: 2026-09-06T18:01:56.459Z
+Canonical source remains index.html in this repository.
