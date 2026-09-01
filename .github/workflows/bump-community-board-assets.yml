@@ -17,10 +17,12 @@ jobs:
         run: |
           python - <<'PY'
           from pathlib import Path
+          import re
           p=Path('community.html')
           s=p.read_text()
-          s=s.replace('community-board-v2.css?v=3','community-board-v2.css?v=4')
-          s=s.replace('community-board-v2.js?v=3','community-board-v2.js?v=4')
+          s=re.sub(r'community-board-v2\.css\?v=\d+','community-board-v2.css?v=7',s)
+          s=re.sub(r'community-board-v2\.js\?v=\d+','community-board-v2.js?v=7',s)
+          s=re.sub(r'community-expand\.js\?v=\d+','community-expand.js?v=2',s)
           p.write_text(s)
           PY
       - name: Commit cache bust
@@ -29,7 +31,7 @@ jobs:
           git config user.email 'actions@users.noreply.github.com'
           git add community.html
           if git diff --cached --quiet; then exit 0; fi
-          git commit -m 'Load corrected community board v4 assets'
+          git commit -m 'Load scrollable notes and official source links'
           git push
 
-# trigger v4
+# trigger v7
