@@ -1,0 +1,36 @@
+name: Patch AORC E2EE integration
+
+on:
+  push:
+    paths:
+      - '.github/workflows/patch-e2ee.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Integrate E2EE messaging
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('community.html')
+          s = p.read_text()
+          old = 'Private in-app messages are visible only to conversation participants through the app. They are not end-to-end encrypted.'
+          new = 'Private messages are end-to-end encrypted in your browser. AORC stores encrypted message data, but not readable message content. Conversation participants, timestamps and message size metadata may still be visible to the service. Password recovery may make older encrypted messages unreadable.'
+          s = s.replace(old, new)
+          if '<script src="e2ee.js"></script>' not in s:
+              s = s.replace('</body></html>', '<script src="e2ee.js"></script></body></html>')
+          p.write_text(s)
+          PY
+      - name: Commit patch
+        run: |
+          git config user.name 'AORC Site Bot'
+          git config user.email 'actions@users.noreply.github.com'
+          git add community.html
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m 'Enable end-to-end encrypted private messaging'
+          git push
