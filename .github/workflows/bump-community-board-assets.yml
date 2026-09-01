@@ -20,9 +20,8 @@ jobs:
           import re
           p=Path('community.html')
           s=p.read_text()
-          s=re.sub(r'community-board-v2\.css\?v=\d+','community-board-v2.css?v=7',s)
-          s=re.sub(r'community-board-v2\.js\?v=\d+','community-board-v2.js?v=7',s)
-          s=re.sub(r'community-expand\.js\?v=\d+','community-expand.js?v=2',s)
+          s=re.sub(r'community-board-v2\.css\?v=\d+','community-board-v2.css?v=8',s)
+          s=re.sub(r'community-board-v2\.js\?v=\d+','community-board-v2.js?v=8',s)
           p.write_text(s)
           PY
       - name: Commit cache bust
@@ -31,7 +30,7 @@ jobs:
           git config user.email 'actions@users.noreply.github.com'
           git add community.html
           if git diff --cached --quiet; then exit 0; fi
-          git commit -m 'Load scrollable notes and official source links'
+          git commit -m 'Load fast category tabs and optimized board assets'
           git push
 
-# trigger v7
+# trigger v8
