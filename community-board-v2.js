@@ -1,6 +1,7 @@
 (()=>{
 const PAGE_SIZE=12,SAVED_KEY='aorc_saved_posts_v1';let visibleCount=PAGE_SIZE,sortMode='recent',searchTerm='',saved=new Set(JSON.parse(localStorage.getItem(SAVED_KEY)||'[]'));
-const feed=document.getElementById('feed'),boardBox=document.querySelector('#board>.box'),board=document.getElementById('board'),composer=document.getElementById('composer');if(!feed||!boardBox||!board)return;
+const feed=document.getElementById('feed'),boardBox=document.querySelector('#board>.box'),board=document.getElementById('board'),composer=document.getElementById('composer'),tabs=document.querySelector('.tabs');if(!feed||!boardBox||!board)return;
+boardBox.id='boardFilters';if(composer)composer.id='composer';if(tabs)tabs.classList.add('board-tabs-duplicate');
 function postId(card){const b=[...card.querySelectorAll('button')].find(x=>/showComments\((\d+)\)/.test(x.getAttribute('onclick')||''));const m=b&&(b.getAttribute('onclick')||'').match(/showComments\((\d+)\)/);return m?Number(m[1]):null}
 function saveSet(){localStorage.setItem(SAVED_KEY,JSON.stringify([...saved]))}
 function closePanels(except){[boardBox,composer].forEach(p=>{if(p&&p!==except)p.classList.remove('board-panel-open')})}
@@ -25,5 +26,5 @@ window.markFilled=async id=>{await rest('community_posts',{method:'PATCH',q:'id=
 window.closePost=window.markFilled;
 window.reactivatePost=async id=>{await rest('community_posts',{method:'PATCH',q:'id=eq.'+id,body:{status:'active',updated_at:new Date().toISOString()}});await window.board();showMyPosts()};
 window.repostPost=async id=>{const rows=await rest('community_posts',{q:'select=*&id=eq.'+id});const p=rows?.[0];if(!p)return;await rest('community_posts',{method:'POST',body:{author_id:user.id,city:p.city,category:p.category,title:p.title,body:p.body,business_name:p.business_name||null,business_url:p.business_url||null,status:'active'}});await window.board();showMyPosts()};
-injectQuickbar();injectControls();const mo=new MutationObserver(mutations=>{const hasFreshPost=mutations.some(m=>[...m.addedNodes].some(n=>n.nodeType===1&&((n.matches&&n.matches('.post:not([data-v2])'))||(n.querySelector&&n.querySelector('.post:not([data-v2])')))));if(hasFreshPost)decorate();});mo.observe(feed,{childList:true});decorate();
+injectQuickbar();injectControls();boardBox.classList.remove('board-panel-open');composer?.classList.remove('board-panel-open');const mo=new MutationObserver(mutations=>{const hasFreshPost=mutations.some(m=>[...m.addedNodes].some(n=>n.nodeType===1&&((n.matches&&n.matches('.post:not([data-v2])'))||(n.querySelector&&n.querySelector('.post:not([data-v2])')))));if(hasFreshPost)decorate();});mo.observe(feed,{childList:true});decorate();
 })();
