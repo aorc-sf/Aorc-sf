@@ -32,3 +32,5 @@ jobs:
           if git diff --cached --quiet; then exit 0; fi
           git commit -m 'Enable expandable community notes'
           git push
+
+# trigger expandable notes
