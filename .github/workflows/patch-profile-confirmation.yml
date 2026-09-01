@@ -13,16 +13,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Add green saved confirmation animation
+      - name: Add green saved confirmation animation and spacing
         run: |
           python - <<'PY'
           from pathlib import Path
           p=Path('community.html')
           s=p.read_text()
-          css='.profile-confirm{display:inline-flex;align-items:center;gap:8px;margin-left:10px;padding:8px 11px;border-radius:999px;background:#e7f5ee;color:#15553d;font-size:13px;font-weight:850;opacity:0;transform:translateY(4px) scale(.96);pointer-events:none}.profile-confirm.show{animation:profileConfirm 1.9s ease forwards}@keyframes profileConfirm{0%{opacity:0;transform:translateY(4px) scale(.96)}15%,72%{opacity:1;transform:translateY(0) scale(1)}100%{opacity:0;transform:translateY(-3px) scale(.98)}}'
+          css='.profile-confirm{display:inline-flex;align-items:center;gap:8px;margin-left:10px;padding:8px 11px;border-radius:999px;background:#e7f5ee;color:#15553d;font-size:13px;font-weight:850;opacity:0;transform:translateY(4px) scale(.96);pointer-events:none}.profile-confirm.show{animation:profileConfirm 1.9s ease forwards}#profile>.row{margin-top:16px}@keyframes profileConfirm{0%{opacity:0;transform:translateY(4px) scale(.96)}15%,72%{opacity:1;transform:translateY(0) scale(1)}100%{opacity:0;transform:translateY(-3px) scale(.98)}}'
           marker='@media(max-width:760px)'
-          if '.profile-confirm{' not in s:
-              s=s.replace(marker,css+marker,1)
+          if '#profile>.row{margin-top:16px}' not in s:
+              s=s.replace(marker,'#profile>.row{margin-top:16px}'+marker,1)
           old='<button id="saveprofile" class="btn primary" type="button">Save profile</button>'
           new='<div class="row"><button id="saveprofile" class="btn primary" type="button">Save profile</button><span id="profileconfirm" class="profile-confirm" role="status" aria-live="polite">✓ Saved</span></div>'
           if old in s:
@@ -39,7 +39,7 @@ jobs:
           git config user.email 'actions@users.noreply.github.com'
           git add community.html
           if git diff --cached --quiet; then exit 0; fi
-          git commit -m 'Add green profile saved confirmation animation'
+          git commit -m 'Add spacing above profile save controls'
           git push
 
-# trigger 2026-09-01
+# trigger 2026-09-01 spacing
