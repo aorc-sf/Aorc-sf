@@ -1,0 +1,39 @@
+name: Patch community board layout
+
+on:
+  push:
+    paths:
+      - '.github/workflows/patch-community-layout.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Move board above signup and add password reset link
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('community.html')
+          s = p.read_text()
+          marker = '@media(max-width:760px)'
+          css = 'main.wrap{display:flex;flex-direction:column}.tabs{order:0}#board{order:1}.safe{order:2}.safe+.box{order:3}#profile{order:4}#messages{order:5}'
+          if css not in s:
+              s = s.replace(marker, css + marker)
+          old = '<button id="signup" class="btn primary" type="button">Create account</button><button id="signout" class="btn muted hidden" type="button">Sign out</button>'
+          new = '<button id="signup" class="btn primary" type="button">Create account</button><a class="btn muted" href="reset.html" style="text-decoration:none">Forgot password?</a><button id="signout" class="btn muted hidden" type="button">Sign out</button>'
+          if old in s:
+              s = s.replace(old, new, 1)
+          p.write_text(s)
+          PY
+      - name: Commit patch
+        run: |
+          git config user.name 'AORC Site Bot'
+          git config user.email 'actions@users.noreply.github.com'
+          git add community.html
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m 'Move community board above signup and add reset link'
+          git push
