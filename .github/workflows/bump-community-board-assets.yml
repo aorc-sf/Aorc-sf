@@ -1,0 +1,33 @@
+name: Bump community board assets
+
+on:
+  push:
+    paths:
+      - '.github/workflows/bump-community-board-assets.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Bust cached board assets
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('community.html')
+          s=p.read_text()
+          s=s.replace('community-board-v2.css?v=1','community-board-v2.css?v=3')
+          s=s.replace('community-board-v2.js?v=1','community-board-v2.js?v=3')
+          p.write_text(s)
+          PY
+      - name: Commit cache bust
+        run: |
+          git config user.name 'AORC Site Bot'
+          git config user.email 'actions@users.noreply.github.com'
+          git add community.html
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m 'Load board-first community layout assets'
+          git push
