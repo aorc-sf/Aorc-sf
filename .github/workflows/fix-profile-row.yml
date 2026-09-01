@@ -1,0 +1,39 @@
+name: Fix profile save row
+
+on:
+  push:
+    paths:
+      - '.github/workflows/fix-profile-row.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Normalize profile save row and spacing
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('community.html')
+          s=p.read_text()
+          old='<div class="row"><div class="row"><div class="row"><button id="saveprofile" class="btn primary" type="button">Save profile</button><span id="profileconfirm" class="profile-confirm" role="status" aria-live="polite">✓ Saved</span></div><span id="profileconfirm" class="profile-confirm" role="status" aria-live="polite">✓ Saved</span></div><span id="profileconfirm" class="profile-confirm" role="status" aria-live="polite">✓ Saved</span></div>'
+          new='<div class="row" style="margin-top:22px"><button id="saveprofile" class="btn primary" type="button">Save profile</button><span id="profileconfirm" class="profile-confirm" role="status" aria-live="polite">✓ Saved</span></div>'
+          if old in s:
+              s=s.replace(old,new,1)
+          else:
+              import re
+              s=re.sub(r'<div class="row">(?:<div class="row">)+<button id="saveprofile" class="btn primary" type="button">Save profile</button>.*?</div>(?:<span id="profileconfirm".*?</span></div>)+', new, s, count=1)
+          s=s.replace('#profile>.row{margin-top:16px}','#profile>.row{margin-top:22px}')
+          p.write_text(s)
+          PY
+      - name: Commit patch
+        run: |
+          git config user.name 'AORC Site Bot'
+          git config user.email 'actions@users.noreply.github.com'
+          git add community.html
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m 'Fix profile save row spacing'
+          git push
