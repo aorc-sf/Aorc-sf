@@ -1,0 +1,43 @@
+name: Patch profile save confirmation
+
+on:
+  push:
+    paths:
+      - '.github/workflows/patch-profile-confirmation.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Add green saved confirmation animation
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('community.html')
+          s=p.read_text()
+          css='.profile-confirm{display:inline-flex;align-items:center;gap:8px;margin-left:10px;padding:8px 11px;border-radius:999px;background:#e7f5ee;color:#15553d;font-size:13px;font-weight:850;opacity:0;transform:translateY(4px) scale(.96);pointer-events:none}.profile-confirm.show{animation:profileConfirm 1.9s ease forwards}@keyframes profileConfirm{0%{opacity:0;transform:translateY(4px) scale(.96)}15%,72%{opacity:1;transform:translateY(0) scale(1)}100%{opacity:0;transform:translateY(-3px) scale(.98)}}'
+          marker='@media(max-width:760px)'
+          if '.profile-confirm{' not in s:
+              s=s.replace(marker,css+marker,1)
+          old='<button id="saveprofile" class="btn primary" type="button">Save profile</button>'
+          new='<div class="row"><button id="saveprofile" class="btn primary" type="button">Save profile</button><span id="profileconfirm" class="profile-confirm" role="status" aria-live="polite">✓ Saved</span></div>'
+          if old in s:
+              s=s.replace(old,new,1)
+          old2="status('Profile saved.');await sync();await board()"
+          new2="status('Profile saved.');const c=$('profileconfirm');if(c){c.classList.remove('show');void c.offsetWidth;c.classList.add('show')}await sync();await board()"
+          if old2 in s:
+              s=s.replace(old2,new2,1)
+          p.write_text(s)
+          PY
+      - name: Commit patch
+        run: |
+          git config user.name 'AORC Site Bot'
+          git config user.email 'actions@users.noreply.github.com'
+          git add community.html
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m 'Add green profile saved confirmation animation'
+          git push
